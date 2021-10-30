@@ -1,5 +1,7 @@
-from flask import Flask, request
-from flask_restx import Api, Resource
+from functools import wraps
+
+from flask import Flask, request, jsonify
+from flask_restx import Api, Resource, abort
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.dialects.sqlite import JSON
 
@@ -14,7 +16,11 @@ db = SQLAlchemy(app)
 
 class Account(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(80), nullable=False)
+    name = db.Column(db.String(80), unique=True, nullable=False)
+    is_admin = db.Column(db.Boolean, default=False)
+
+    def as_dict(self):
+        return {'id': self.id, 'name': self.name, 'is_admin': self.is_admin}
 
     def __repr__(self):
         return '<Account %r>' % self.name
@@ -22,6 +28,7 @@ class Account(db.Model):
 
 class VaccinationSupplyData(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+    account_id = db.Column(db.Integer, db.ForeignKey('account.id'), nullable=False)
     type = db.Column(db.String(80), nullable=False)
     data = db.Column(MutableDict.as_mutable(JSON))
 
@@ -29,22 +36,66 @@ class VaccinationSupplyData(db.Model):
         return '<VaccinationSupplyData %r>' % self.type
 
 
+def secure(f):
+    @wraps(f)
+    def check_authorization(*args, **kwargs):
+        account_id = request.headers.get("ACCOUNT_ID")
+        account = Account.query.get(account_id)
+        if account:
+            return f(*args, account=account, **kwargs)
+        else:
+            return abort(403)
+
+    return check_authorization
+
+
+@app.route('/api/user/login', methods=['POST'])
+def login():
+    name = request.json['name']
+    user = Account.query.filter_by(name=name).first()
+    return jsonify(user.as_dict()), 200
+
+
+@app.route('/api/user/register', methods=['POST'])
+def register():
+    name = request.json['name']
+    user = Account(name=name, is_admin=False)
+    db.session.add(user)
+    db.session.commit()
+    return jsonify({}), 200
+
+
 @api.route('/api/vaccine/report')
 class VaccinationReport(Resource):
 
     def get(self):
         rows = VaccinationSupplyData.query.all()
-        return [{"type": row.type, "data": row.data} for row in rows]
+        return [{"account": row.account_id, "type": row.type, "type": row.type **row.data} for row in rows]
 
 
-@api.route('/api/vaccine/supply/<string:type>')
+@api.route('/api/vaccine/supply/<string:type>', '/api/vaccine/supply/<string:type>/<int:id>')
 class VaccinationDelivery(Resource):
 
-    def post(self, type):
-        supply_data = VaccinationSupplyData(type=type, data=request.json)
+    @secure
+    def get(self, account, type):
+        print(type)
+        rows = VaccinationSupplyData.query.filter_by(type=type, account_id=account.id).all()
+        return [{"id": row.id, **row.data} for row in rows]
+
+    @secure
+    def delete(self, account, type, id):
+        row = VaccinationSupplyData.query.get(id)
+        if row and row.type == type and row.account_id == account.id:
+            db.session.delete(row)
+            db.session.commit()
+
+    @secure
+    def post(self, account, type):
+        supply_data = VaccinationSupplyData(type=type, account_id=account.id, data=request.json)
         db.session.add(supply_data)
         db.session.commit()
-        return {}, 204
+        rows = VaccinationSupplyData.query.filter_by(type=type).all()
+        return [{"id": row.id, **row.data} for row in rows]
 
 
 if __name__ == '__main__':

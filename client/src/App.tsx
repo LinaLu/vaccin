@@ -1,12 +1,29 @@
-import React from 'react';
-import './App.css';
-import { IncomingDeliveryForm } from './components/IncomingDeliveryForm';
+import React, {useEffect, useState} from 'react';
+import VaccineDelivery from "./screens/VaccineDelivery";
+import Login from "./screens/Login";
+import {Container} from "react-bootstrap";
+
+export interface User {
+    id: string;
+    isAdmin: boolean;
+    name: string;
+}
 
 function App() {
+
+    const [user, setUser] = useState<User>()
+
+    useEffect(() => {
+        if (user){
+            localStorage.setItem("ACCOUNT_ID", user.id)
+        }
+
+    }, [user, setUser])
+
     return (
-        <div className="App">
-            <IncomingDeliveryForm/>
-        </div>
+        <Container fluid style={{ padding: 10 }}>
+            {user ? <VaccineDelivery/> : <Login handleLogin={setUser}/>}
+        </Container>
     );
 }
 

@@ -10,22 +10,21 @@ import {useFetchWrapper} from "../utils/fetchWrapper";
 import {formatDate, vaccineSuppliers} from "../utils/utilities";
 
 const validationSchema = Yup.object().shape({
-    quantity: Yup.number().typeError('heltal krävs').integer('heltal krävs').positive('kvantitet kan ej vara negativ').required('kvantitet saknas'),
-    GLNCode: Yup.string().required('GLN kod saknas'),
+    quantityVial: Yup.number().typeError('heltal krävs').integer('heltal krävs').positive('kvantitet kan ej vara negativ').required('kvantitet saknas'),
+    quantityDose: Yup.number().typeError('heltal krävs').integer('heltal krävs').positive('kvantitet kan ej vara negativ').required('kvantitet saknas'),
     vaccineSupplier: Yup.string().required('Välj leverantör')
 });
 
 interface FormInput {
     id?: number;
     deliveryDate: Date;
-    plannedDeliveryDate: Date;
     vaccineSupplier: string;
-    quantity: number;
-    GLNCode: string;
+    quantityVial: number;
+    quantityDose: number;
 }
 
 
-export function IncomingDeliveryForm() {
+export function InventoryForm() {
 
     const {register, control, handleSubmit, reset, formState: { errors } } = useForm<FormInput>(
         {resolver: yupResolver(validationSchema)}
@@ -33,10 +32,10 @@ export function IncomingDeliveryForm() {
 
     const [rows, setRows] = useState<Array<FormInput>>([]);
     const api = useFetchWrapper();
-
+ 
     const fetchData = async () => {
         try {
-            const response = await api.get('/api/vaccine/supply/incoming_delivery')
+            const response = await api.get('/api/vaccine/supply/inventory')
                 .catch(error => alert(error));
             setRows(response)
         } catch (error) {
@@ -49,14 +48,14 @@ export function IncomingDeliveryForm() {
     }, [])
 
     const onSubmit: SubmitHandler<FormInput> = async (data, e) => {
-        await api.post('/api/vaccine/supply/incoming_delivery', data)
+        await api.post('/api/vaccine/supply/inventory', data)
         reset();
         await fetchData();
     }
 
     const onDelete = async (e: React.MouseEvent, id: number | undefined) => {
         e.preventDefault();
-        await api.delete('/api/vaccine/supply/incoming_delivery/' + id)
+        await api.delete('/api/vaccine/supply/inventory/' + id)
         await fetchData();
     }
 
@@ -67,10 +66,7 @@ export function IncomingDeliveryForm() {
                     <thead>
                     <tr>
                         <th>
-                            Lev datum:
-                        </th>
-                        <th>
-                            Planerat lev datum
+                            Datum tid:
                         </th>
                         <th>
                             vaccinleverantör
@@ -79,7 +75,7 @@ export function IncomingDeliveryForm() {
                             kvantitet vial
                         </th>
                         <th>
-                            GLN-mottagare
+                            kvantitet dos
                         </th>
                         <th>
                         </th>
@@ -87,13 +83,11 @@ export function IncomingDeliveryForm() {
                     </thead>
                     <tbody>
                     {rows.map(row => (
-                        
                         <tr>
                             <td>{formatDate(row.deliveryDate)}</td>
-                            <td>{formatDate(row.plannedDeliveryDate)}</td>
                             <td>{row.vaccineSupplier}</td>
-                            <td>{row.quantity}</td>
-                            <td>{row.GLNCode}</td>
+                            <td>{row.quantityVial}</td>
+                            <td>{row.quantityDose}</td>
                             <td>
                                 <button onClick={(e) => onDelete(e, row.id)}>delete</button>
                             </td>
@@ -108,24 +102,12 @@ export function IncomingDeliveryForm() {
                                 render={({field: {onChange, value}}) => (
                                     <DataPicker onChange={onChange}
                                                 selected={value}
-                                                placeholderText="Lev datum"
+                                                placeholderText="Datum tid"
                                                 dateFormat="yyyy-MM-dd"
                                     />)}
                             />
                         </th>
-                        <td>
-                            <Controller
-                                name={"plannedDeliveryDate"}
-                                control={control}
-                                defaultValue={new Date()}
-                                render={({field: {onChange, value}}) =>
-                                    <DataPicker onChange={onChange}
-                                                selected={value}
-                                                placeholderText="Planerat lev datum"
-                                                dateFormat="yyyy-MM-dd"
-                                    />}
-                            />
-                        </td>
+                       
                         <td>
                             <Controller
                                 name="vaccineSupplier"
@@ -152,17 +134,17 @@ export function IncomingDeliveryForm() {
                         </td>
                         <td>
                             <input
-                                {...register('quantity')}
-                                className={`form-control ${errors.quantity ? 'is-invalid' : ''}`}
+                                {...register('quantityVial')}
+                                className={`form-control ${errors.quantityVial ? 'is-invalid' : ''}`}
                             />
-                            <div className="invalid-quantity">{errors.quantity?.message}</div>
+                            <div className="invalid-quantityVial">{errors.quantityVial?.message}</div>
                         </td>
                         <td>
                             <input 
-                                {...register('GLNCode')}
-                                className={`form-control ${errors.GLNCode ? 'is-invalid' : ''}`}
+                                {...register('quantityDose')}
+                                className={`form-control ${errors.quantityDose ? 'is-invalid' : ''}`}
                             />
-                            <div className="invalid-GLNCode">{errors.GLNCode?.message}</div>
+                            <div className="invalid-quantityDose">{errors.quantityDose?.message}</div>
                         </td>
                         <td>
                             <button type="submit">Submit</button>

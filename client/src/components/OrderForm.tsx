@@ -10,22 +10,21 @@ import {useFetchWrapper} from "../utils/fetchWrapper";
 import {formatDate, vaccineSuppliers} from "../utils/utilities";
 
 const validationSchema = Yup.object().shape({
-    quantity: Yup.number().typeError('heltal krävs').integer('heltal krävs').positive('kvantitet kan ej vara negativ').required('kvantitet saknas'),
+    quantityDose: Yup.number().typeError('heltal krävs').integer('heltal krävs').positive('kvantitet kan ej vara negativ').required('kvantitet saknas'),
     GLNCode: Yup.string().required('GLN kod saknas'),
     vaccineSupplier: Yup.string().required('Välj leverantör')
 });
 
 interface FormInput {
     id?: number;
-    deliveryDate: Date;
-    plannedDeliveryDate: Date;
-    vaccineSupplier: string;
-    quantity: number;
+    orderDate: Date;
+    requestDeliveryDate: Date;
+    quantityDose: number;
     GLNCode: string;
 }
 
 
-export function IncomingDeliveryForm() {
+export function OrderForm() {
 
     const {register, control, handleSubmit, reset, formState: { errors } } = useForm<FormInput>(
         {resolver: yupResolver(validationSchema)}
@@ -36,7 +35,7 @@ export function IncomingDeliveryForm() {
 
     const fetchData = async () => {
         try {
-            const response = await api.get('/api/vaccine/supply/incoming_delivery')
+            const response = await api.get('/api/vaccine/supply/order')
                 .catch(error => alert(error));
             setRows(response)
         } catch (error) {
@@ -49,14 +48,14 @@ export function IncomingDeliveryForm() {
     }, [])
 
     const onSubmit: SubmitHandler<FormInput> = async (data, e) => {
-        await api.post('/api/vaccine/supply/incoming_delivery', data)
+        await api.post('/api/vaccine/supply/order', data)
         reset();
         await fetchData();
     }
 
     const onDelete = async (e: React.MouseEvent, id: number | undefined) => {
         e.preventDefault();
-        await api.delete('/api/vaccine/supply/incoming_delivery/' + id)
+        await api.delete('/api/vaccine/supply/order/' + id)
         await fetchData();
     }
 
@@ -67,16 +66,13 @@ export function IncomingDeliveryForm() {
                     <thead>
                     <tr>
                         <th>
-                            Lev datum:
+                            Beställningsdatum:
                         </th>
                         <th>
-                            Planerat lev datum
+                            Önskat lev datum
                         </th>
                         <th>
-                            vaccinleverantör
-                        </th>
-                        <th>
-                            kvantitet vial
+                            kvantitet dos
                         </th>
                         <th>
                             GLN-mottagare
@@ -89,10 +85,9 @@ export function IncomingDeliveryForm() {
                     {rows.map(row => (
                         
                         <tr>
-                            <td>{formatDate(row.deliveryDate)}</td>
-                            <td>{formatDate(row.plannedDeliveryDate)}</td>
-                            <td>{row.vaccineSupplier}</td>
-                            <td>{row.quantity}</td>
+                            <td>{formatDate(row.orderDate)}</td>
+                            <td>{formatDate(row.requestDeliveryDate)}</td>
+                            <td>{row.quantityDose}</td>
                             <td>{row.GLNCode}</td>
                             <td>
                                 <button onClick={(e) => onDelete(e, row.id)}>delete</button>
@@ -102,7 +97,7 @@ export function IncomingDeliveryForm() {
                     <tr>
                         <th scope="row">
                             <Controller
-                                name={"deliveryDate"}
+                                name={"orderDate"}
                                 control={control}
                                 defaultValue={new Date()}
                                 render={({field: {onChange, value}}) => (
@@ -115,7 +110,7 @@ export function IncomingDeliveryForm() {
                         </th>
                         <td>
                             <Controller
-                                name={"plannedDeliveryDate"}
+                                name={"requestDeliveryDate"}
                                 control={control}
                                 defaultValue={new Date()}
                                 render={({field: {onChange, value}}) =>
@@ -127,35 +122,11 @@ export function IncomingDeliveryForm() {
                             />
                         </td>
                         <td>
-                            <Controller
-                                name="vaccineSupplier"
-                                control={control}
-                                render={({field: {onChange, value}, fieldState: { error }}) =>
-                                    <>
-                                        <Select
-                                        {...register("vaccineSupplier")}
-                                        onChange={(e) => e && e.label? onChange(e.label) : onChange(undefined)}
-                                        options={vaccineSuppliers}
-                                        isClearable
-                                        defaultValue={undefined}
-                                        />
-
-                                        {errors && errors.vaccineSupplier && (
-                                        <div className="is-invalid">
-                                            {errors.vaccineSupplier.message}
-                                        </div>
-                                        )}
-                                   
-                                    </>
-                                }
-                            />
-                        </td>
-                        <td>
                             <input
-                                {...register('quantity')}
-                                className={`form-control ${errors.quantity ? 'is-invalid' : ''}`}
+                                {...register('quantityDose')}
+                                className={`form-control ${errors.quantityDose ? 'is-invalid' : ''}`}
                             />
-                            <div className="invalid-quantity">{errors.quantity?.message}</div>
+                            <div className="invalid-quantity">{errors.quantityDose?.message}</div>
                         </td>
                         <td>
                             <input 
