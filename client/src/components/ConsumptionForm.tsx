@@ -16,18 +16,22 @@ const validationSchema = Yup.object().shape({
 });
 
 interface FormInput {
-    id?: number;
     consumptionDate: Date;
     vaccineSupplier: string;
     quantityVial: number;
 }
 
 interface Row extends Omit<FormInput, 'consumptionDate'> {
+    id?: number;
+    account?: string;
     consumptionDate: string;
 }
 
+interface ConsumptionFormProps {
+    isAdmin: boolean;
+}
 
-export function ConsumptionForm() {
+export function ConsumptionForm({isAdmin}: ConsumptionFormProps) {
 
     const {register, control, handleSubmit, reset, formState: { errors } } = useForm<FormInput>(
         {resolver: yupResolver(validationSchema)}
@@ -69,6 +73,10 @@ export function ConsumptionForm() {
                 <Table bordered>
                     <thead>
                     <tr>
+                        { isAdmin &&
+                        <th>
+                            Vårdgivare
+                        </th> }
                         <th>
                             Förbrukningsdatum:
                         </th>
@@ -86,6 +94,7 @@ export function ConsumptionForm() {
                     {rows.map(row => (
                         
                         <tr key={row.id}>
+                            { isAdmin && <td>{row.account}</td> }
                             <td>{formatDate(row.consumptionDate)}</td>
                             <td>{row.vaccineSupplier}</td>
                             <td>{row.quantityVial}</td>
@@ -94,6 +103,7 @@ export function ConsumptionForm() {
                             </td>
                         </tr>
                     ))}
+                    {!isAdmin &&
                     <tr>
                         <td>
                             <Controller
@@ -112,22 +122,22 @@ export function ConsumptionForm() {
                             <Controller
                                 name="vaccineSupplier"
                                 control={control}
-                                render={({field: {onChange, value}, fieldState: { error }}) =>
+                                render={({field: {onChange, value}, fieldState: {error}}) =>
                                     <>
                                         <Select
-                                        {...register("vaccineSupplier")}
-                                        onChange={(e) => e && e.label? onChange(e.label) : onChange(undefined)}
-                                        options={vaccineSuppliers}
-                                        isClearable
-                                        defaultValue={undefined}
+                                            {...register("vaccineSupplier")}
+                                            onChange={(e) => e && e.label ? onChange(e.label) : onChange(undefined)}
+                                            options={vaccineSuppliers}
+                                            isClearable
+                                            defaultValue={undefined}
                                         />
 
                                         {errors && errors.vaccineSupplier && (
-                                        <div className="is-invalid">
-                                            {errors.vaccineSupplier.message}
-                                        </div>
+                                            <div className="is-invalid">
+                                                {errors.vaccineSupplier.message}
+                                            </div>
                                         )}
-                                   
+
                                     </>
                                 }
                             />
@@ -143,6 +153,7 @@ export function ConsumptionForm() {
                             <button type="submit">Submit</button>
                         </td>
                     </tr>
+                    }
                     </tbody>
                 </Table>
             </form>

@@ -16,12 +16,13 @@ const validationSchema = Yup.object().shape({
 });
 
 interface Row extends Omit<FormInput, 'deliveryDate'|'plannedDeliveryDate'> {
+    id: number;
+    account?: string;
     deliveryDate: string | null;
     plannedDeliveryDate: string;
 }
 
 interface FormInput {
-    id?: number;
     deliveryDate: Date;
     plannedDeliveryDate: Date;
     vaccineSupplier: string;
@@ -29,8 +30,11 @@ interface FormInput {
     GLNCode: string;
 }
 
+interface IncomingDeliveryFormProps {
+    isAdmin: boolean;
+}
 
-export function IncomingDeliveryForm() {
+export function IncomingDeliveryForm({isAdmin}: IncomingDeliveryFormProps) {
 
     const {register, control, handleSubmit, reset, formState: { errors } } = useForm<FormInput>(
         {resolver: yupResolver(validationSchema)}
@@ -72,6 +76,10 @@ export function IncomingDeliveryForm() {
                 <Table bordered>
                     <thead>
                     <tr>
+                        { isAdmin &&
+                        <th>
+                            Vårdgivare
+                        </th> }
                         <th>
                             Lev datum:
                         </th>
@@ -93,8 +101,8 @@ export function IncomingDeliveryForm() {
                     </thead>
                     <tbody>
                     {rows.map(row => (
-                        
                         <tr key={row.id}>
+                            { isAdmin && <td>{row.account}</td> }
                             <td>{formatDate(row.deliveryDate)}</td>
                             <td>{formatDate(row.plannedDeliveryDate)}</td>
                             <td>{row.vaccineSupplier}</td>
@@ -105,8 +113,9 @@ export function IncomingDeliveryForm() {
                             </td>
                         </tr>
                     ))}
+                    {!isAdmin &&
                     <tr>
-                        <th scope="row">
+                        <td>
                             <Controller
                                 name={"deliveryDate"}
                                 control={control}
@@ -118,7 +127,7 @@ export function IncomingDeliveryForm() {
                                                 dateFormat="yyyy-MM-dd"
                                     />)}
                             />
-                        </th>
+                        </td>
                         <td>
                             <Controller
                                 name={"plannedDeliveryDate"}
@@ -136,22 +145,22 @@ export function IncomingDeliveryForm() {
                             <Controller
                                 name="vaccineSupplier"
                                 control={control}
-                                render={({field: {onChange, value}, fieldState: { error }}) =>
+                                render={({field: {onChange, value}, fieldState: {error}}) =>
                                     <>
                                         <Select
-                                        {...register("vaccineSupplier")}
-                                        onChange={(e) => e && e.label? onChange(e.label) : onChange(undefined)}
-                                        options={vaccineSuppliers}
-                                        isClearable
-                                        defaultValue={undefined}
+                                            {...register("vaccineSupplier")}
+                                            onChange={(e) => e && e.label ? onChange(e.label) : onChange(undefined)}
+                                            options={vaccineSuppliers}
+                                            isClearable
+                                            defaultValue={undefined}
                                         />
 
                                         {errors && errors.vaccineSupplier && (
-                                        <div className="is-invalid">
-                                            {errors.vaccineSupplier.message}
-                                        </div>
+                                            <div className="is-invalid">
+                                                {errors.vaccineSupplier.message}
+                                            </div>
                                         )}
-                                   
+
                                     </>
                                 }
                             />
@@ -164,7 +173,7 @@ export function IncomingDeliveryForm() {
                             <div className="invalid-quantity">{errors.quantity?.message}</div>
                         </td>
                         <td>
-                            <input 
+                            <input
                                 {...register('GLNCode')}
                                 className={`form-control ${errors.GLNCode ? 'is-invalid' : ''}`}
                             />
@@ -174,6 +183,7 @@ export function IncomingDeliveryForm() {
                             <button type="submit">Submit</button>
                         </td>
                     </tr>
+                    }
                     </tbody>
                 </Table>
             </form>

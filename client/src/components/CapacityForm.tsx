@@ -22,10 +22,15 @@ interface FormInput {
 
 interface Row extends Omit<FormInput, 'capacityDate'> {
     id?: number;
+    account?: string;
     capacityDate: string;
 }
 
-export function CapacityForm() {
+interface CapacityFormFormProps {
+    isAdmin: boolean;
+}
+
+export function CapacityForm({isAdmin}: CapacityFormFormProps) {
 
     const {register, control, handleSubmit, reset, formState: { errors } } = useForm<FormInput>(
         {resolver: yupResolver(validationSchema)}
@@ -67,6 +72,10 @@ export function CapacityForm() {
                 <Table bordered>
                     <thead>
                     <tr>
+                        { isAdmin &&
+                        <th>
+                            Vårdgivare
+                        </th> }
                         <th>
                             Kapacitetetsdatum (prognos):
                         </th>
@@ -83,6 +92,7 @@ export function CapacityForm() {
                     <tbody>
                     {rows.map(row => (  
                         <tr key={row.id}>
+                            { isAdmin && <td>{row.account}</td> }
                             <td>{formatDate(row.capacityDate)}</td>
                             <td>{row.vaccineSupplier}</td>
                             <td>{row.quantityDose}</td>
@@ -91,6 +101,7 @@ export function CapacityForm() {
                             </td>
                         </tr>
                     ))}
+                    {!isAdmin &&
                     <tr>
                         <td>
                             <Controller
@@ -109,22 +120,22 @@ export function CapacityForm() {
                             <Controller
                                 name="vaccineSupplier"
                                 control={control}
-                                render={({field: {onChange, value}, fieldState: { error }}) =>
+                                render={({field: {onChange, value}, fieldState: {error}}) =>
                                     <>
                                         <Select
-                                        {...register("vaccineSupplier")}
-                                        onChange={(e) => e && e.label? onChange(e.label) : onChange(undefined)}
-                                        options={vaccineSuppliers}
-                                        isClearable
-                                        defaultValue={undefined}
+                                            {...register("vaccineSupplier")}
+                                            onChange={(e) => e && e.label ? onChange(e.label) : onChange(undefined)}
+                                            options={vaccineSuppliers}
+                                            isClearable
+                                            defaultValue={undefined}
                                         />
 
                                         {errors && errors.vaccineSupplier && (
-                                        <div className="is-invalid">
-                                            {errors.vaccineSupplier.message}
-                                        </div>
+                                            <div className="is-invalid">
+                                                {errors.vaccineSupplier.message}
+                                            </div>
                                         )}
-                                   
+
                                     </>
                                 }
                             />
@@ -140,6 +151,7 @@ export function CapacityForm() {
                             <button type="submit">Submit</button>
                         </td>
                     </tr>
+                    }
                     </tbody>
                 </Table>
             </form>

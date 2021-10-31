@@ -14,19 +14,19 @@ export default function VaccineDelivery({isAdmin}: VaccineDeliveryProps) {
     return (        
         <Tabs defaultActiveKey="delivery" id="uncontrolled-tab-example" className="mb-3">
             <Tab eventKey="delivery" title="Inleverans">
-                <IncomingDeliveryForm/>
+                <IncomingDeliveryForm isAdmin={isAdmin}/>
             </Tab>
             <Tab eventKey="saldo" title="Lagersaldo">
-                <InventoryForm/>
+                <InventoryForm isAdmin={isAdmin}/>
             </Tab>
             <Tab eventKey="consumption" title="Förbrukning">
-                <ConsumptionForm/>
+                <ConsumptionForm isAdmin={isAdmin}/>
             </Tab>
             <Tab eventKey="capacity" title="Kapacitet">
-                <CapacityForm/>
+                <CapacityForm isAdmin={isAdmin}/>
             </Tab>
             <Tab eventKey="order" title="Beställning">
-                 <OrderForm/>
+                 <OrderForm isAdmin={isAdmin}/>
             </Tab>
             <Tab eventKey="admin" title="Admin" disabled={!isAdmin}>
                 {isAdmin && <VaccineReport/>}

@@ -16,19 +16,23 @@ const validationSchema = Yup.object().shape({
 });
 
 interface Row extends Omit<FormInput, 'deliveryDate'> {
+    id?: number;
+    account?: string;
     deliveryDate: string;
 }
 
 interface FormInput {
-    id?: number;
     deliveryDate: Date;
     vaccineSupplier: string;
     quantityVial: number;
     quantityDose: number;
 }
 
+interface InventoryFormProps {
+    isAdmin: boolean;
+}
 
-export function InventoryForm() {
+export function InventoryForm({isAdmin}: InventoryFormProps) {
 
     const {register, control, handleSubmit, reset, formState: { errors } } = useForm<FormInput>(
         {resolver: yupResolver(validationSchema)}
@@ -70,6 +74,10 @@ export function InventoryForm() {
                 <Table bordered>
                     <thead>
                     <tr>
+                        { isAdmin &&
+                        <th>
+                            Vårdgivare
+                        </th> }
                         <th>
                             Datum tid:
                         </th>
@@ -89,6 +97,7 @@ export function InventoryForm() {
                     <tbody>
                     {rows.map(row => (
                         <tr key={row.id}>
+                            { isAdmin && <td>{row.account}</td> }
                             <td>{formatDate(row.deliveryDate)}</td>
                             <td>{row.vaccineSupplier}</td>
                             <td>{row.quantityVial}</td>
@@ -98,6 +107,7 @@ export function InventoryForm() {
                             </td>
                         </tr>
                     ))}
+                    {!isAdmin &&
                     <tr>
                         <th scope="row">
                             <Controller
@@ -112,27 +122,27 @@ export function InventoryForm() {
                                     />)}
                             />
                         </th>
-                       
+
                         <td>
                             <Controller
                                 name="vaccineSupplier"
                                 control={control}
-                                render={({field: {onChange, value}, fieldState: { error }}) =>
+                                render={({field: {onChange, value}, fieldState: {error}}) =>
                                     <>
                                         <Select
-                                        {...register("vaccineSupplier")}
-                                        onChange={(e) => e && e.label? onChange(e.label) : onChange(undefined)}
-                                        options={vaccineSuppliers}
-                                        isClearable
-                                        defaultValue={undefined}
+                                            {...register("vaccineSupplier")}
+                                            onChange={(e) => e && e.label ? onChange(e.label) : onChange(undefined)}
+                                            options={vaccineSuppliers}
+                                            isClearable
+                                            defaultValue={undefined}
                                         />
 
                                         {errors && errors.vaccineSupplier && (
-                                        <div className="is-invalid">
-                                            {errors.vaccineSupplier.message}
-                                        </div>
+                                            <div className="is-invalid">
+                                                {errors.vaccineSupplier.message}
+                                            </div>
                                         )}
-                                   
+
                                     </>
                                 }
                             />
@@ -145,7 +155,7 @@ export function InventoryForm() {
                             <div className="invalid-quantityVial">{errors.quantityVial?.message}</div>
                         </td>
                         <td>
-                            <input 
+                            <input
                                 {...register('quantityDose')}
                                 className={`form-control ${errors.quantityDose ? 'is-invalid' : ''}`}
                             />
@@ -155,6 +165,7 @@ export function InventoryForm() {
                             <button type="submit">Submit</button>
                         </td>
                     </tr>
+                    }
                     </tbody>
                 </Table>
             </form>

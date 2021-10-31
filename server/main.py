@@ -1,5 +1,8 @@
+import csv
 from datetime import datetime
 from functools import wraps
+from io import StringIO
+
 import pandas as pd
 from flask import Flask, request, jsonify
 from flask_restx import Api, Resource, abort
@@ -76,12 +79,17 @@ class VaccinationReport(Resource):
                                 VaccinationSupplyData.created_date,
                                 VaccinationSupplyData.data,
                                 ).join(VaccinationSupplyData).all()
-        reported = [{"account": row.name, "date": row.created_date.strftime("%Y-%m-%d"), "type": row.type, **row.data} for row in rows]
+        reported = [{"account": row.name,
+                     "date": row.created_date.strftime("%Y-%m-%d"),
+                     "type": row.type,
+                     **row.data} for row in rows]
+        accounts = [account.name for account in Account.query.all()]
 
         if reported:
             df_reported = pd.DataFrame(reported)
-            report = df_reported.groupby(['account', "type", "date"]).size().reset_index(name='count').to_dict(orient='records')
-            return report
+            report = df_reported.groupby(["account", "type", "date"]).size().reset_index(name='count').to_dict(orient='records')
+            accounts_not_in_report = (set(accounts).difference(set([row["account"] for row in report])))
+            return report + [{"account": account, "count": 0} for account in accounts_not_in_report]
         else:
             return []
 
@@ -91,13 +99,17 @@ class VaccinationDelivery(Resource):
 
     @secure
     def get(self, account, type):
-        rows = VaccinationSupplyData.query.filter_by(type=type, account_id=account.id).all()
-        return [{"id": row.id, **row.data} for row in rows]
+        filter = {"type": type} if account.is_admin else {"type": type, "account_id": account.id}
+        rows = db.session.query(Account.name,
+                                VaccinationSupplyData.id,
+                                VaccinationSupplyData.data).join(VaccinationSupplyData).filter_by(**filter).all()
+
+        return [{"id": row.id, "account": row.name, **row.data} for row in rows]
 
     @secure
     def delete(self, account, type, id):
         row = VaccinationSupplyData.query.get(id)
-        if row and row.type == type and row.account_id == account.id:
+        if row and row.type == type:
             db.session.delete(row)
             db.session.commit()
 

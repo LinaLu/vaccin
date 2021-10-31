@@ -52,8 +52,8 @@ export function VaccineReport() {
                     </tr>
                     </thead>
                     <tbody>
-                    {rows.map(row => (
-                        <tr key={row.account}>
+                    {rows.map((row, index) => (
+                        <tr key={index} style={{ backgroundColor: row.count===0 ? "#FF0000" : 'none'}}>
                             <td>{row.account}</td>
                             <td>{row.date}</td>
                             <td>{row.type}</td>

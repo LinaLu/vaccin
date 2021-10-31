@@ -22,11 +22,16 @@ interface FormInput {
 
 interface Row extends Omit<FormInput, 'orderDate' | 'requestDeliveryDate'> {
     id: number;
+    account?: string;
     orderDate: string | null;
     requestDeliveryDate: string; 
 }
 
-export function OrderForm() {
+interface OrderFormProps {
+    isAdmin: boolean;
+}
+
+export function OrderForm({isAdmin}: OrderFormProps) {
 
     const {register, control, handleSubmit, reset, formState: { errors } } = useForm<FormInput>(
         {resolver: yupResolver(validationSchema)}
@@ -68,6 +73,10 @@ export function OrderForm() {
                 <Table bordered>
                     <thead>
                     <tr>
+                        { isAdmin &&
+                        <th>
+                            Vårdgivare
+                        </th> }
                         <th>
                             Beställningsdatum:
                         </th>
@@ -87,6 +96,7 @@ export function OrderForm() {
                     <tbody>
                     {rows.map(row => (                        
                         <tr key={row.id}>
+                            { isAdmin && <td>{row.account}</td> }
                             <td>{formatDate(row.orderDate)}</td>
                             <td>{formatDate(row.requestDeliveryDate)}</td>
                             <td>{row.quantityDose}</td>
@@ -96,6 +106,7 @@ export function OrderForm() {
                             </td>
                         </tr>
                     ))}
+                    {!isAdmin &&
                     <tr>
                         <td>
                             <Controller
@@ -131,16 +142,17 @@ export function OrderForm() {
                             <div className="invalid-quantityDose">{errors.quantityDose?.message}</div>
                         </td>
                         <td>
-                            <input 
+                            <input
                                 {...register('GLNCode')}
                                 className={`form-control ${errors.GLNCode ? 'is-invalid' : ''}`}
                             />
                             <div className="invalid-GLNCode">{errors.GLNCode?.message}</div>
                         </td>
                         <td>
-                            <button type="submit">Submit</button>                        
+                            <button type="submit">Submit</button>
                         </td>
                     </tr>
+                    }
                     </tbody>
                 </Table>
             </form>
