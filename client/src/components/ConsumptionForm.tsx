@@ -9,6 +9,7 @@ import * as Yup from 'yup';
 import {useFetchWrapper} from "../utils/fetchWrapper";
 import {formatDate, vaccineSuppliers} from "../utils/utilities";
 
+
 const validationSchema = Yup.object().shape({
     quantityVial: Yup.number().typeError('heltal krävs').integer('heltal krävs').positive('kvantitet kan ej vara negativ').required('kvantitet saknas'),
     vaccineSupplier: Yup.string().required('Välj leverantör')
@@ -21,6 +22,10 @@ interface FormInput {
     quantityVial: number;
 }
 
+interface Row extends Omit<FormInput, 'consumptionDate'> {
+    consumptionDate: string;
+}
+
 
 export function ConsumptionForm() {
 
@@ -28,7 +33,7 @@ export function ConsumptionForm() {
         {resolver: yupResolver(validationSchema)}
     );
 
-    const [rows, setRows] = useState<Array<FormInput>>([]);
+    const [rows, setRows] = useState<Array<Row>>([]);
     const api = useFetchWrapper();
 
     const fetchData = async () => {
@@ -43,17 +48,18 @@ export function ConsumptionForm() {
 
     useEffect(() => {
         fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps    
     }, [])
 
     const onSubmit: SubmitHandler<FormInput> = async (data, e) => {
-        await api.post('/api/vaccine/consumption', data)
+        await api.post('/api/vaccine/supply/consumption', data)
         reset();
         await fetchData();
     }
 
     const onDelete = async (e: React.MouseEvent, id: number | undefined) => {
         e.preventDefault();
-        await api.delete('/api/vaccine/consumption/' + id)
+        await api.delete('/api/vaccine/supply/consumption/' + id)
         await fetchData();
     }
 
@@ -72,12 +78,14 @@ export function ConsumptionForm() {
                         <th>
                             kvantitet vial
                         </th>
+                        <th>                            
+                        </th>
                     </tr>
                     </thead>
                     <tbody>
                     {rows.map(row => (
                         
-                        <tr>
+                        <tr key={row.id}>
                             <td>{formatDate(row.consumptionDate)}</td>
                             <td>{row.vaccineSupplier}</td>
                             <td>{row.quantityVial}</td>
@@ -87,7 +95,7 @@ export function ConsumptionForm() {
                         </tr>
                     ))}
                     <tr>
-                        <th scope="row">
+                        <td>
                             <Controller
                                 name={"consumptionDate"}
                                 control={control}
@@ -99,8 +107,7 @@ export function ConsumptionForm() {
                                                 dateFormat="yyyy-MM-dd"
                                     />)}
                             />
-                        </th>
-                       
+                        </td>
                         <td>
                             <Controller
                                 name="vaccineSupplier"

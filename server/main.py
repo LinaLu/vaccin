@@ -1,14 +1,14 @@
+from datetime import datetime
 from functools import wraps
-
+import pandas as pd
 from flask import Flask, request, jsonify
 from flask_restx import Api, Resource, abort
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.dialects.sqlite import JSON
-
 from sqlalchemy.ext.mutable import MutableDict
 
 app = Flask(__name__)
-api = Api(app, version='1.0', title='TodoMVC API', description='A simple TodoMVC API')
+api = Api(app, version='1.0', title='Vaccine API', description='A Vaccine Coordination API')
 
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////tmp/test.db'
 db = SQLAlchemy(app)
@@ -29,6 +29,7 @@ class Account(db.Model):
 class VaccinationSupplyData(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     account_id = db.Column(db.Integer, db.ForeignKey('account.id'), nullable=False)
+    created_date = db.Column(db.DateTime, default=datetime.utcnow)  # timezone?
     type = db.Column(db.String(80), nullable=False)
     data = db.Column(MutableDict.as_mutable(JSON))
 
@@ -59,7 +60,8 @@ def login():
 @app.route('/api/user/register', methods=['POST'])
 def register():
     name = request.json['name']
-    user = Account(name=name, is_admin=False)
+
+    user = Account(name=name, is_admin="admin" in name)
     db.session.add(user)
     db.session.commit()
     return jsonify({}), 200
@@ -69,8 +71,19 @@ def register():
 class VaccinationReport(Resource):
 
     def get(self):
-        rows = VaccinationSupplyData.query.all()
-        return [{"account": row.account_id, "type": row.type, "type": row.type **row.data} for row in rows]
+        rows = db.session.query(Account.name,
+                                VaccinationSupplyData.type,
+                                VaccinationSupplyData.created_date,
+                                VaccinationSupplyData.data,
+                                ).join(VaccinationSupplyData).all()
+        reported = [{"account": row.name, "date": row.created_date.strftime("%Y-%m-%d"), "type": row.type, **row.data} for row in rows]
+
+        if reported:
+            df_reported = pd.DataFrame(reported)
+            report = df_reported.groupby(['account', "type", "date"]).size().reset_index(name='count').to_dict(orient='records')
+            return report
+        else:
+            return []
 
 
 @api.route('/api/vaccine/supply/<string:type>', '/api/vaccine/supply/<string:type>/<int:id>')
@@ -78,7 +91,6 @@ class VaccinationDelivery(Resource):
 
     @secure
     def get(self, account, type):
-        print(type)
         rows = VaccinationSupplyData.query.filter_by(type=type, account_id=account.id).all()
         return [{"id": row.id, **row.data} for row in rows]
 

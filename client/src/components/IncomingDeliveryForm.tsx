@@ -15,6 +15,11 @@ const validationSchema = Yup.object().shape({
     vaccineSupplier: Yup.string().required('Välj leverantör')
 });
 
+interface Row extends Omit<FormInput, 'deliveryDate'|'plannedDeliveryDate'> {
+    deliveryDate: string | null;
+    plannedDeliveryDate: string;
+}
+
 interface FormInput {
     id?: number;
     deliveryDate: Date;
@@ -31,7 +36,7 @@ export function IncomingDeliveryForm() {
         {resolver: yupResolver(validationSchema)}
     );
 
-    const [rows, setRows] = useState<Array<FormInput>>([]);
+    const [rows, setRows] = useState<Array<Row>>([]);
     const api = useFetchWrapper();
 
     const fetchData = async () => {
@@ -46,6 +51,7 @@ export function IncomingDeliveryForm() {
 
     useEffect(() => {
         fetchData();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 
     const onSubmit: SubmitHandler<FormInput> = async (data, e) => {
@@ -88,7 +94,7 @@ export function IncomingDeliveryForm() {
                     <tbody>
                     {rows.map(row => (
                         
-                        <tr>
+                        <tr key={row.id}>
                             <td>{formatDate(row.deliveryDate)}</td>
                             <td>{formatDate(row.plannedDeliveryDate)}</td>
                             <td>{row.vaccineSupplier}</td>

@@ -5,7 +5,7 @@ import {Container} from "react-bootstrap";
 
 export interface User {
     id: string;
-    isAdmin: boolean;
+    is_admin: boolean;
     name: string;
 }
 
@@ -22,7 +22,7 @@ function App() {
 
     return (
         <Container fluid style={{ padding: 10 }}>
-            {user ? <VaccineDelivery/> : <Login handleLogin={setUser}/>}
+            {user ? <VaccineDelivery isAdmin={user.is_admin}/> : <Login handleLogin={setUser}/>}
         </Container>
     );
 }

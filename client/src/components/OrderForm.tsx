@@ -1,5 +1,4 @@
 import React, {useEffect, useState} from 'react';
-import Select from "react-select";
 import {useForm, Controller, SubmitHandler} from 'react-hook-form';
 import DataPicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
@@ -7,22 +6,25 @@ import {Stack, Table} from "react-bootstrap";
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as Yup from 'yup';
 import {useFetchWrapper} from "../utils/fetchWrapper";
-import {formatDate, vaccineSuppliers} from "../utils/utilities";
+import {formatDate} from "../utils/utilities";
 
 const validationSchema = Yup.object().shape({
     quantityDose: Yup.number().typeError('heltal krävs').integer('heltal krävs').positive('kvantitet kan ej vara negativ').required('kvantitet saknas'),
-    GLNCode: Yup.string().required('GLN kod saknas'),
-    vaccineSupplier: Yup.string().required('Välj leverantör')
+    GLNCode: Yup.string().required('GLN kod saknas')
 });
 
 interface FormInput {
-    id?: number;
     orderDate: Date;
     requestDeliveryDate: Date;
     quantityDose: number;
     GLNCode: string;
 }
 
+interface Row extends Omit<FormInput, 'orderDate' | 'requestDeliveryDate'> {
+    id: number;
+    orderDate: string | null;
+    requestDeliveryDate: string; 
+}
 
 export function OrderForm() {
 
@@ -30,7 +32,7 @@ export function OrderForm() {
         {resolver: yupResolver(validationSchema)}
     );
 
-    const [rows, setRows] = useState<Array<FormInput>>([]);
+    const [rows, setRows] = useState<Array<Row>>([]);
     const api = useFetchWrapper();
 
     const fetchData = async () => {
@@ -45,9 +47,10 @@ export function OrderForm() {
 
     useEffect(() => {
         fetchData();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 
-    const onSubmit: SubmitHandler<FormInput> = async (data, e) => {
+    const onSubmit: SubmitHandler<FormInput> = async (data, e) => { 
         await api.post('/api/vaccine/supply/order', data)
         reset();
         await fetchData();
@@ -82,9 +85,8 @@ export function OrderForm() {
                     </tr>
                     </thead>
                     <tbody>
-                    {rows.map(row => (
-                        
-                        <tr>
+                    {rows.map(row => (                        
+                        <tr key={row.id}>
                             <td>{formatDate(row.orderDate)}</td>
                             <td>{formatDate(row.requestDeliveryDate)}</td>
                             <td>{row.quantityDose}</td>
@@ -95,7 +97,7 @@ export function OrderForm() {
                         </tr>
                     ))}
                     <tr>
-                        <th scope="row">
+                        <td>
                             <Controller
                                 name={"orderDate"}
                                 control={control}
@@ -107,7 +109,7 @@ export function OrderForm() {
                                                 dateFormat="yyyy-MM-dd"
                                     />)}
                             />
-                        </th>
+                        </td>
                         <td>
                             <Controller
                                 name={"requestDeliveryDate"}
@@ -126,7 +128,7 @@ export function OrderForm() {
                                 {...register('quantityDose')}
                                 className={`form-control ${errors.quantityDose ? 'is-invalid' : ''}`}
                             />
-                            <div className="invalid-quantity">{errors.quantityDose?.message}</div>
+                            <div className="invalid-quantityDose">{errors.quantityDose?.message}</div>
                         </td>
                         <td>
                             <input 
@@ -136,7 +138,7 @@ export function OrderForm() {
                             <div className="invalid-GLNCode">{errors.GLNCode?.message}</div>
                         </td>
                         <td>
-                            <button type="submit">Submit</button>
+                            <button type="submit">Submit</button>                        
                         </td>
                     </tr>
                     </tbody>

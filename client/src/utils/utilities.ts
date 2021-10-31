@@ -1,12 +1,17 @@
 
-export const formatDate = (date: Date) => {
-var d = new Date(date)
-const options: Intl.DateTimeFormatOptions = {
+export const formatDate = (date: string | null) => {
+if (date === null){
+    return null
+} else {
+    var d = new Date(date)
+    const options: Intl.DateTimeFormatOptions = {
     year: "numeric",
     month: "2-digit",
     day: "numeric",
     };
-return d.toLocaleString('sv-SE', options);
+    return d.toLocaleString('sv-SE', options);
+}
+
 }
 
 

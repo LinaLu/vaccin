@@ -15,10 +15,14 @@ const validationSchema = Yup.object().shape({
 });
 
 interface FormInput {
-    id?: number;
-    CapacityDate: Date;
+    capacityDate: Date;
     vaccineSupplier: string;
     quantityDose: number;
+}
+
+interface Row extends Omit<FormInput, 'capacityDate'> {
+    id?: number;
+    capacityDate: string;
 }
 
 export function CapacityForm() {
@@ -27,7 +31,7 @@ export function CapacityForm() {
         {resolver: yupResolver(validationSchema)}
     );
 
-    const [rows, setRows] = useState<Array<FormInput>>([]);
+    const [rows, setRows] = useState<Array<Row>>([]);
     const api = useFetchWrapper();
 
     const fetchData = async () => {
@@ -42,6 +46,7 @@ export function CapacityForm() {
 
     useEffect(() => {
         fetchData();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 
     const onSubmit: SubmitHandler<FormInput> = async (data, e) => {
@@ -76,10 +81,9 @@ export function CapacityForm() {
                     </tr>
                     </thead>
                     <tbody>
-                    {rows.map(row => (
-                        
-                        <tr>
-                            <td>{formatDate(row.CapacityDate)}</td>
+                    {rows.map(row => (  
+                        <tr key={row.id}>
+                            <td>{formatDate(row.capacityDate)}</td>
                             <td>{row.vaccineSupplier}</td>
                             <td>{row.quantityDose}</td>
                             <td>
@@ -88,9 +92,9 @@ export function CapacityForm() {
                         </tr>
                     ))}
                     <tr>
-                        <th scope="row">
+                        <td>
                             <Controller
-                                name={"CapacityDate"}
+                                name={"capacityDate"}
                                 control={control}
                                 defaultValue={new Date()}
                                 render={({field: {onChange, value}}) => (
@@ -100,7 +104,7 @@ export function CapacityForm() {
                                                 dateFormat="yyyy-MM-dd"
                                     />)}
                             />
-                        </th>
+                        </td>
                         <td>
                             <Controller
                                 name="vaccineSupplier"
@@ -130,7 +134,7 @@ export function CapacityForm() {
                                 {...register('quantityDose')}
                                 className={`form-control ${errors.quantityDose ? 'is-invalid' : ''}`}
                             />
-                            <div className="invalid-quantity">{errors.quantityDose?.message}</div>
+                            <div className="invalid-quantityDose">{errors.quantityDose?.message}</div>
                         </td>
                         <td>
                             <button type="submit">Submit</button>
