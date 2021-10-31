@@ -1,4 +1,3 @@
-import csv
 from datetime import datetime
 from functools import wraps
 from io import StringIO
@@ -64,7 +63,7 @@ def login():
 def register():
     name = request.json['name']
 
-    user = Account(name=name, is_admin="admin" in name)
+    user = Account(name=name, is_admin="admin" in name)  # <= hack
     db.session.add(user)
     db.session.commit()
     return jsonify({}), 200
@@ -91,7 +90,7 @@ class VaccinationReport(Resource):
             accounts_not_in_report = (set(accounts).difference(set([row["account"] for row in report])))
             return report + [{"account": account, "count": 0} for account in accounts_not_in_report]
         else:
-            return []
+            return [{"account": account, "count": 0} for account in accounts]
 
 
 @api.route('/api/vaccine/supply/<string:type>', '/api/vaccine/supply/<string:type>/<int:id>')
